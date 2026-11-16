@@ -1,0 +1,1 @@
+{ "status": "ok", "checks": [{ "name": "db", "ok": true }] }

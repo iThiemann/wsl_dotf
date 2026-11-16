@@ -1,0 +1,54 @@
+# ==============================================================================
+# ~/.bashrc — managed by wsl-dotfiles (edit the repo, not the symlink target)
+#   Machine-specific stuff goes into ~/.bashrc.local
+# ==============================================================================
+
+# interactive shells only
+case $- in *i*) ;; *) return ;; esac
+
+# colours first, so ble.sh can pick up LS_COLORS for filename highlighting
+if command -v dircolors >/dev/null 2>&1; then
+  eval "$(dircolors -b ~/.dircolors 2>/dev/null || dircolors -b)"
+fi
+
+# ble.sh — syntax highlighting, fish-style autosuggestions, menu completion.
+# Must be sourced early; attached at the very end. Start with NO_BLE=1 bash to skip it.
+if [[ -z ${NO_BLE-} && -f ~/.local/share/blesh/ble.sh ]]; then
+  source -- ~/.local/share/blesh/ble.sh --attach=none
+fi
+
+# --- history (atuin is the main search; this keeps plain bash history sane) ---
+HISTCONTROL=ignoreboth:erasedups
+HISTSIZE=100000
+HISTFILESIZE=200000
+HISTTIMEFORMAT='%F %T  '
+shopt -s histappend cmdhist
+
+# --- shell behaviour ---------------------------------------------------------
+shopt -s checkwinsize   # update LINES/COLUMNS after each command
+shopt -s autocd         # type a directory name to cd into it (like zsh AUTO_CD)
+shopt -s cdspell dirspell
+shopt -s globstar extglob
+shopt -s no_empty_cmd_completion
+
+# --- completion --------------------------------------------------------------
+if ! shopt -oq posix && [[ -r /usr/share/bash-completion/bash_completion ]]; then
+  . /usr/share/bash-completion/bash_completion
+fi
+
+# less: view archives, images, etc.
+[[ -x /usr/bin/lesspipe ]] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# fallback prompt (starship replaces this)
+PS1='\[\e[1;34m\]\w\[\e[0m\] \$ '
+
+# --- modules (same numbering idea as the zsh setup) --------------------------
+for _rc in ~/.bashrc.d/*.bash; do
+  [[ -r $_rc ]] && . "$_rc"
+done
+unset _rc
+
+[[ -r ~/.bashrc.local ]] && . ~/.bashrc.local
+
+# must be the last line
+[[ ! ${BLE_VERSION-} ]] || ble-attach

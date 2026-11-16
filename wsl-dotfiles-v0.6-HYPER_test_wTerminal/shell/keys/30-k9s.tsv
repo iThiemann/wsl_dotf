@@ -1,0 +1,17 @@
+# k9s: essentials (press ? inside k9s for everything; <leader>kk opens it in nvim)
+:	command: :pods :deploy :svc :ns :ctx :events :crds …
+/	filter current list
+Enter / Esc	drill down / back
+l	logs   (p = previous container logs)
+s	shell into container
+d	describe
+y	YAML
+e	edit resource
+Ctrl-d	delete
+Ctrl-k	kill (force)
+Shift-f	port-forward
+0	all namespaces
+Ctrl-a	all aliases/resources
+Shift-c / Shift-m	sort by CPU / memory
+?	help
+Ctrl-c / :q	quit

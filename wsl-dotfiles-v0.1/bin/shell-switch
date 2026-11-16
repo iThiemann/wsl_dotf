@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# shell-switch — switch between bash and zsh
+#
+#   shell-switch               show login shell + running shell
+#   shell-switch zsh|bash      make it the default login shell (chsh, asks for password)
+#   shell-switch toggle        flip the default between bash and zsh
+#
+#   Just try the other one now, without changing anything:
+#     tozsh   /  tobash        (aliases: exec zsh -l / exec bash -l)
+#   Or open the "Ubuntu · zsh" / "Ubuntu · bash" profile in Windows Terminal.
+# ==============================================================================
+set -euo pipefail
+
+login_shell="$(getent passwd "${USER:-$(id -un)}" | cut -d: -f7)"
+running="$(ps -o comm= -p "$PPID" 2>/dev/null || echo '?')"
+
+show() {
+  printf 'default (login) shell : %s\n' "$login_shell"
+  printf 'running shell         : %s\n' "$running"
+}
+
+set_default() {
+  local want=$1 path
+  path="$(command -v "$want")" || { echo "$want is not installed (run ./install.sh)" >&2; exit 1; }
+  grep -qx "$path" /etc/shells || { echo "$path missing from /etc/shells" >&2; exit 1; }
+  if [[ $login_shell == "$path" ]]; then
+    echo "$want is already the default shell."
+  else
+    chsh -s "$path"
+    echo "Default shell is now $want. New terminals/tabs will start in it."
+  fi
+  echo "Switch this terminal now with:  exec $want -l"
+}
+
+case "${1-}" in
+  "" | status) show ;;
+  zsh | bash) set_default "$1" ;;
+  toggle) [[ $login_shell == */zsh ]] && set_default bash || set_default zsh ;;
+  -h | --help) sed -n '3,12p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) echo "usage: shell-switch [status|zsh|bash|toggle]" >&2; exit 2 ;;
+esac

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# pbcopy for WSL — stdin → Windows clipboard (UTF-8 safe, umlauts included)
+exec /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -NonInteractive -Command \
+  '[Console]::InputEncoding=[Text.Encoding]::UTF8; Set-Clipboard -Value ([Console]::In.ReadToEnd())'

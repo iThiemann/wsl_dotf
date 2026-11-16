@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+# ==============================================================================
+# PowerToys — declarative settings (WinGet configuration + PowerToys DSC)
+#   Apply:  winget configure -f powertoys.dsc.yaml --accept-configuration-agreements
+#   Re-applying is safe: only settings that differ are changed.
+#   Layouts are NOT part of DSC → apply-fancyzones.ps1 installs them.
+# ==============================================================================
+properties:
+  configurationVersion: 0.2.0
+  resources:
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: installPowerToys
+      directives:
+        description: Install PowerToys
+        allowPrerelease: false
+      settings:
+        id: Microsoft.PowerToys
+        source: winget
+
+    - resource: Microsoft.PowerToys.Configure/PowerToysConfigure
+      dependsOn:
+        - installPowerToys
+      directives:
+        description: Configure PowerToys for a DevOps / SRE workstation
+      settings:
+        GeneralSettings:
+          Startup: true                      # start with Windows (FancyZones/Workspaces need it running)
+          Theme: "dark"
+
+        FancyZones:
+          Enabled: true
+          # --- snapping ---------------------------------------------------------
+          FancyzonesShiftDrag: true                      # hold Shift while dragging → show zones
+          FancyzonesMouseSwitch: false                   # alt: true → right-click while dragging toggles zones
+          FancyzonesOverrideSnapHotkeys: true            # Win+←/→ move between ZONES instead of Windows Snap
+          FancyzonesMoveWindowsAcrossMonitors: true      # Win+←/→ continues onto the next monitor
+          FancyzonesMoveWindowsBasedOnPosition: true     # Win+arrows go by position (up/down too), not zone index
+          FancyzonesMouseMiddleClickSpanningMultipleZones: true  # middle-click while dragging → span zones
+          FancyzonesMakeDraggedWindowTransparent: true
+          FancyzonesAllowChildWindowSnap: false
+          FancyzonesRestoreSize: true                    # window gets its old size back when unsnapped
+          # --- "always the same position" -------------------------------------
+          FancyzonesAppLastZoneMoveWindows: true         # KEY: apps reopen in the zone they were last in
+          FancyzonesOpenWindowOnActiveMonitor: false     # must stay false or the line above is overridden
+          FancyzonesDisplayOrWorkAreaChangeMoveWindows: true  # (un)plugging a monitor → windows go back to their zones
+          FancyzonesZoneSetChangeMoveWindows: true       # switching layouts re-fits snapped windows
+          # --- layouts ------------------------------------------------------------
+          FancyzonesQuickLayoutSwitch: true              # Win+Ctrl+Alt+1…6 → layouts from fancyzones-layout-hotkeys.json
+          FancyzonesFlashZonesOnQuickSwitch: true
+          FancyzonesShowOnAllMonitors: false
+          FancyzonesSpanZonesAcrossMonitors: false       # alt: true → one layout across all screens
+          FancyzonesWindowSwitching: true                # Win+PgUp/PgDn cycle windows stacked in one zone
+          FancyzonesEditorHotkey: "Win+Shift+`"          # layout editor (on QWERTZ: the ´ key next to ß)
+          # --- look ----------------------------------------------------------------
+          FancyzonesSystemTheme: true
+          FancyzonesShowZoneNumber: true
+          FancyzonesHighlightOpacity: 40
+          # apps that must never be snapped (one exe per line)
+          FancyzonesExcludedApps: "ScreenClippingHost.exe\r\nSnippingTool.exe"
+
+        AlwaysOnTop:
+          Enabled: true                      # Win+Ctrl+T pins the active window (handy for runbooks/dashboards)
+          FrameEnabled: true
+          SoundEnabled: false

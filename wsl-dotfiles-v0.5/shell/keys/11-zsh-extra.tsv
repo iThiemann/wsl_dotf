@@ -1,0 +1,8 @@
+# zsh: oh-my-zsh plugin keys not visible in bindkey
+Esc Esc	prefix current/previous command with sudo (sudo plugin)
+Esc then t,l,d,r	show tldr page for the command being typed (tldr plugin)
+Ctrl-Space / → / End	accept autosuggestion
+Alt-f	accept one word of the suggestion
+Tab	fzf-tab menu with preview; < / > switch groups
+Ctrl-x Ctrl-e	edit command line in nvim
+F1 / Ctrl-g ?	this overview (keys)

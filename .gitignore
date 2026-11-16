@@ -1,0 +1,60 @@
+# ── OS / editor junk ─────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# ── Secrets: never commit ────────────────────────
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+.ssh/
+.gnupg/
+.netrc
+.git-credentials
+**/secrets/
+*.local          # e.g. .zshrc.local, .gitconfig.local for machine-specific stuff
+
+# ── Shell history & sessions ─────────────────────
+.zsh_history
+.bash_history
+.zcompdump*
+.zsh_sessions/
+.lesshst
+.python_history
+.node_repl_history
+.wget-hsts
+.viminfo
+
+# ── Plugin managers / caches (reinstallable) ─────
+.oh-my-zsh/
+.zinit/
+.antidote/
+.tmux/plugins/
+.vim/plugged/
+.local/share/nvim/
+.local/state/
+.cache/
+node_modules/
+__pycache__/
+*.pyc
+
+# ── Atuin / tool data ────────────────────────────
+.local/share/atuin/
+.config/atuin/key
+
+# ── Backups & logs ───────────────────────────────
+*.bak
+*.backup
+*.orig
+*.log
+.dotfiles_backups/
