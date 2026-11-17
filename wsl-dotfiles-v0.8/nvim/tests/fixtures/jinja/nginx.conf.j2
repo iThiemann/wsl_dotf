@@ -1,0 +1,9 @@
+server {
+  listen {{ nginx_port | default(80) }};
+  server_name {{ inventory_hostname }};
+{% for loc in locations %}
+  location {{ loc.path }} {
+    proxy_pass {{ loc.upstream }};
+  }
+{% endfor %}
+}

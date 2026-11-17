@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# git-identity — manage several git identities / servers / credentials
+#
+#   git-identity add NAME --email E [--name "Full Name"] [--dir ~/work/]
+#                [--url gitlab.company.com] [--ssh-key ~/.ssh/id_ed25519_work]
+#                [--cred gcm|rbw|cache|store|none] [--user LOGIN] [--sign]
+#   git-identity list           identities + the rules that select them
+#   git-identity check          which identity / key / credential helper applies HERE
+#   git-identity edit NAME      open the identity file in $EDITOR
+#
+# Writes ~/.config/git/identities/NAME and appends includeIf + credential blocks to
+# ~/.gitconfig.local (see config/git/gitconfig.local.example for the full picture).
+# ==============================================================================
+set -euo pipefail
+IDDIR="$HOME/.config/git/identities"
+LOCAL="$HOME/.gitconfig.local"
+GCM="/mnt/c/Program Files/Git/mingw64/bin/git-credential-manager.exe"
+mkdir -p "$IDDIR"
+touch "$LOCAL"
+
+die() { echo "git-identity: $*" >&2; exit 1; }
+
+cmd="${1:-check}"
+shift || true
+
+case "$cmd" in
+  add)
+    name="${1:?usage: git-identity add NAME --email E …}"; shift
+    email="" full="$(git config --global user.name || true)" dir="" url="" key="" cred="" login="" sign=0
+    while (($#)); do
+      case "$1" in
+        --email) email="$2"; shift ;;
+        --name) full="$2"; shift ;;
+        --dir) dir="${2%/}/"; shift ;;
+        --url) url="${2#https://}"; url="${url%/}"; shift ;;
+        --ssh-key) key="$2"; shift ;;
+        --cred) cred="$2"; shift ;;
+        --user) login="$2"; shift ;;
+        --sign) sign=1 ;;
+        *) die "unknown option $1" ;;
+      esac
+      shift
+    done
+    [[ -n $email ]] || die "--email is required"
+    [[ -n $dir || -n $url ]] || die "give --dir and/or --url (otherwise nothing selects this identity)"
+    f="$IDDIR/$name"
+    [[ -e $f ]] && die "$f exists — git-identity edit $name"
+    git config --file "$f" user.email "$email"
+    [[ -n $full ]] && git config --file "$f" user.name "$full"
+    if [[ -n $key ]]; then
+      git config --file "$f" core.sshCommand "ssh -i $key -o IdentitiesOnly=yes"
+      if ((sign)); then
+        git config --file "$f" user.signingKey "$key.pub"
+        git config --file "$f" gpg.format ssh
+        git config --file "$f" commit.gpgSign true
+      fi
+    fi
+    {
+      echo
+      echo "# --- identity: $name (git-identity add, $(date +%F)) ---"
+    } >>"$LOCAL"
+    [[ -n $dir ]] && git config --file "$LOCAL" --add "includeIf.gitdir:$dir.path" "$f"
+    if [[ -n $url ]]; then
+      git config --file "$LOCAL" --add "includeIf.hasconfig:remote.*.url:https://$url/**.path" "$f"
+      git config --file "$LOCAL" --add "includeIf.hasconfig:remote.*.url:git@$url:*/**.path" "$f"
+      sect="credential.https://$url"
+      case "${cred:-}" in
+        "") ;;
+        none) git config --file "$LOCAL" --add "$sect.helper" "" ;;
+        gcm) git config --file "$LOCAL" --add "$sect.helper" ""
+             git config --file "$LOCAL" --add "$sect.helper" "${GCM// /\\ }" ;;
+        rbw) git config --file "$LOCAL" --add "$sect.helper" ""
+             git config --file "$LOCAL" --add "$sect.helper" "rbw" ;;
+        cache) git config --file "$LOCAL" --add "$sect.helper" ""
+               git config --file "$LOCAL" --add "$sect.helper" "cache --timeout=28800" ;;
+        store) git config --file "$LOCAL" --add "$sect.helper" ""
+               git config --file "$LOCAL" --add "$sect.helper" "store"
+               echo "warning: 'store' keeps the token in plain text (~/.git-credentials)" >&2 ;;
+        *) die "--cred must be gcm|rbw|cache|store|none" ;;
+      esac
+      [[ -n $login ]] && git config --file "$LOCAL" "$sect.username" "$login"
+    fi
+    echo "created $f"
+    echo "rules appended to $LOCAL:"
+    git config --file "$LOCAL" --get-regexp '^includeif\.' | grep -F -- "$f" | sed 's/^/  /' || true
+    [[ -n $key && ! -f $key ]] && echo "note: $key doesn't exist yet → ssh-keygen -t ed25519 -f $key -C $email"
+    exit 0 ;;
+
+  list)
+    echo "identities ($IDDIR):"
+    for f in "$IDDIR"/*; do
+      [[ -f $f && $f != *.example ]] || continue
+      printf '  %-12s %s\n' "$(basename "$f")" "$(git config --file "$f" user.email)"
+    done
+    echo
+    echo "rules (~/.gitconfig.local):"
+    git config --file "$LOCAL" --get-regexp '^includeif\.' 2>/dev/null |
+      sed -E 's/^includeif\.(.*)\.path (.*)$/  \1  →  \2/' || echo "  (none)"
+    echo
+    echo "credential helpers by URL:"
+    git config --get-regexp '^credential\..*helper$' 2>/dev/null | sed 's/^/  /' || echo "  (none)"
+    exit 0 ;;
+
+  check)
+    git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "not in a git repo"
+    show() { local v o; v="$(git config --get "$1" 2>/dev/null)" || v="(unset)"; o="$(git config --show-origin --get "$1" 2>/dev/null | cut -f1)"; printf '  %-18s %-45s %s\n' "$1" "$v" "${o#file:}"; }
+    echo "repo: $(git rev-parse --show-toplevel)"
+    echo "remotes:"; git remote -v | awk '$3 == "(fetch)" { print "  " $1 "  " $2 }'
+    show user.name; show user.email; show user.signingKey; show core.sshCommand; show commit.gpgSign
+    url="$(git remote get-url origin 2>/dev/null || true)"
+    if [[ $url == https://* ]]; then
+      host="${url#https://}"; host="${host%%/*}"
+      echo "credential helpers used for https://$host:"
+      git config --get-urlmatch credential.helper "https://$host" 2>/dev/null | sed 's/^/  /' || echo "  (none)"
+      git config --get-urlmatch credential.username "https://$host" 2>/dev/null | sed 's/^/  username: /' || true
+    fi
+    exit 0 ;;
+
+  edit)
+    f="$IDDIR/${1:?name}"
+    exec "${EDITOR:-nvim}" "$f" ;;
+
+  -h | --help | help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) die "unknown command $cmd (add|list|check|edit)" ;;
+esac
