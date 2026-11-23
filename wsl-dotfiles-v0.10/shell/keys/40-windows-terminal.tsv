@@ -1,0 +1,19 @@
+# windows-terminal: Windows Terminal (wsl-dotfiles settings)
+Alt-Shift-v / h / d	split right / down / auto
+Alt-Shift-z / x	zoom / close pane
+Alt-←↑→↓	focus pane
+Alt-Shift-←↑→↓	resize pane
+Alt-Shift-PgUp / PgDn	swap pane left / right
+Alt-Shift-b	broadcast input to all panes of the tab
+Alt-Shift-1 / 2	layout: Dev (60|40) / Ops (2×2)
+Alt-Shift-t	new tmux tab
+Alt-Shift-r / c	rename tab / tab colour
+Ctrl-Shift-t / w	new tab / close pane
+Ctrl-Alt-1…9	go to tab
+Ctrl-Tab / Ctrl-Shift-Tab	next / previous tab (MRU)
+Ctrl-Shift-p	command palette
+Ctrl-Shift-f	find
+Ctrl-Shift-m	mark mode (keyboard selection)
+Ctrl-= / Ctrl-- / Ctrl-0	font bigger / smaller / reset
+Win-^	quake window (global summon)
+Alt-Enter / F11	fullscreen
