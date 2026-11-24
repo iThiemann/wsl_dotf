@@ -1,0 +1,27 @@
+{
+  "task": {
+    "prefix": "atask",
+    "description": "Ansible task",
+    "body": [
+      "- name: ${1:Describe the task}",
+      "  ansible.builtin.${2:package}:",
+      "    ${3:name}: ${4}",
+      "  become: ${5:true}",
+      "$0"
+    ]
+  },
+  "playbook": {
+    "prefix": "aplay",
+    "description": "Ansible playbook",
+    "body": [
+      "---",
+      "- name: ${1:Play}",
+      "  hosts: ${2:all}",
+      "  gather_facts: ${3:true}",
+      "  tasks:",
+      "    - name: ${4:First task}",
+      "      ansible.builtin.${5:ping}:",
+      "$0"
+    ]
+  }
+}

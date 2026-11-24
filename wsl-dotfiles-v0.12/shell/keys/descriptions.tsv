@@ -1,0 +1,64 @@
+# name	category	description  (functions + aliases whose expansion isn't self-explanatory)
+ls	files	eza listing: long, all, dirs first, git column; -t time -S size -X ext -r reverse -l short view
+lt	files	tree view: lt [depth 1-5] [path]
+lt1	files	tree depth 1
+lt2	files	tree depth 2
+lt3	files	tree depth 3
+l.	files	list parent dir (l.. l... = further up)
+u	navigation	go up n directories: u 3
+-	navigation	cd to previous directory
+..	navigation	cd .. (... .... = more levels, .1 .2 … same)
+cd	navigation	zoxide: cd foo → best match by frecency
+cdi	navigation	zoxide interactive directory picker
+pathfzf	shell	browse $PATH entries with a directory preview (alias pathls)
+path	shell	show $PATH one entry per line
+genv	shell	grep environment variables: genv proxy
+reload-bash	shell	restart bash with fresh config
+reload-zsh	shell	restart zsh with fresh config
+tozsh	shell	switch this terminal to zsh
+tobash	shell	switch this terminal to bash
+shell-switch	shell	show / change default login shell
+keys	shell	this overview of shortcuts, aliases and functions (F1)
+r	shell	reset terminal
+q	shell	exit
+c	shell	clear
+dux	system	disk usage of this filesystem's top dirs (sudo), sorted
+dusage	system	size of each entry in the current dir, sorted
+aptu	system	apt update + full-upgrade + autoremove
+open	windows	open file/folder/URL with Windows (Explorer / default app / browser)
+explorer	windows	open current folder in Explorer
+pbcopy	windows	stdin → Windows clipboard (UTF-8 safe)
+pbpaste	windows	Windows clipboard → stdout
+clip	clipboard	search clipboard history (Windows + WSL), Enter copies again
+clipx	clipboard	transform text: json b64d b64e jwt urld urle epoch yaml2json …
+wslrestart	windows	wsl --shutdown (restart WSL)
+gfc	git	commit with message and push: gfc fix typo
+gup	git	add all, commit, push: gup "message"
+gcof	git	pick a tracked file with fzf, print path (Ctrl-g f)
+gcob	git	pick local/remote branch with fzf and switch (Ctrl-g b)
+glog	git	browse commits with fzf, print hash (Ctrl-g l)
+gstash	git	pick a stash: apply / pop / show / drop
+gsmb	git	show local branches whose remote is gone
+gcmb	git	delete local branches whose remote is gone (safe)
+gcmbf	git	force-delete local branches whose remote is gone
+git_main_branch	git	print main/master/trunk branch name
+git_current_branch	git	print current branch name
+lg	git	lazygit
+asp	aws	set AWS profile: asp prod (no arg = clear)
+aspf	aws	pick AWS profile with fzf
+agp	aws	show current AWS profile
+aws_profiles	aws	list AWS profiles
+k	kubernetes	kubectl
+ide_tmux	tmux	ide_tmux <session> [dir]: editor pane + terminal below
+IDE	tmux	split current tmux window into IDE layout
+keep_delete	files	delete everything in a folder except one name
+keep_print	files	preview what keep_delete would delete
+v	editor	nvim (NVIM_APPNAME=nvim)
+edit-bash	editor	edit bash config
+edit-zsh	editor	edit zsh config
+edit-shell	editor	edit shared shell config
+git-identity	git	manage several git identities: add / list / check (which identity applies here)
+git-credential-rbw	git	git credential helper reading tokens from Bitwarden (rbw)
+rbwpw	secrets	copy a Bitwarden password (private: not in clipboard history), clears after 20 s
+rbwf	secrets	pick a Bitwarden entry with fzf, copy its password privately
+rbw	secrets	Bitwarden CLI: rbw unlock / ls / get NAME / sync / lock

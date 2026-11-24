@@ -1,0 +1,14 @@
+# ~/.inputrc — readline (used by plain bash, python REPL, etc.)
+$include /etc/inputrc
+
+set completion-ignore-case on
+set completion-map-case on
+set show-all-if-ambiguous on
+set colored-stats on
+set colored-completion-prefix on
+set mark-symlinked-directories on
+set bell-style none
+
+# zsh-style prefix search
+"\e[A": history-search-backward
+"\e[B": history-search-forward

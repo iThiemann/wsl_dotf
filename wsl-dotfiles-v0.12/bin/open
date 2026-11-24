@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# open for WSL — like macOS `open`: files/folders in Explorer (default app), URLs in the browser
+#   open            → current folder in Explorer
+#   open file.pdf   → default Windows app
+#   open https://…  → default browser
+target="${1:-.}"
+if [[ $target =~ ^[a-zA-Z][a-zA-Z0-9+.-]*:// ]]; then
+  arg="$target"
+else
+  [[ -e $target ]] || { echo "open: $target: no such file or directory" >&2; exit 1; }
+  arg="$(wslpath -w "$(realpath "$target")")"
+fi
+# explorer.exe always exits 1, so ignore its status
+/mnt/c/Windows/explorer.exe "$arg" || true
