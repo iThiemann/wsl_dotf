@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-# pbpaste for WSL — Windows clipboard → stdout (UTF-8, LF line endings)
-/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -NonInteractive -Command \
-  '[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Clipboard -Raw' | sed 's/\r$//'

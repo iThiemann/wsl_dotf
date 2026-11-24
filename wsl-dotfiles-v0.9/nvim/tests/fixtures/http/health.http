@@ -1,3 +1,0 @@
-### health
-GET https://example.com/health
-Accept: application/json

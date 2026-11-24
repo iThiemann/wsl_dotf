@@ -1,7 +1,0 @@
-# Included by ~/.gitconfig only for repositories under /mnt/ (Windows drives in WSL)
-[core]
-	# NTFS has no Unix permission bits → ignore "mode changed" noise.
-	#   alt: true → only if the drive is mounted with `metadata` in /etc/wsl.conf
-	fileMode = false
-	# Windows tools may write CRLF; don't fail the diff over it.
-	whitespace = cr-at-eol
