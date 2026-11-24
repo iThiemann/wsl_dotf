@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# clip — clipboard history for WSL / Ubuntu
+#
+#   clip              fzf picker, newest first, full-text preview
+#                       Enter  copy back to the clipboard (and print it)
+#                       Ctrl-o print only     Ctrl-y copy only (quiet)
+#   clip -n 20        print the last 20 entries
+#   clip -s TEXT      print entries containing TEXT (case-insensitive)
+#   clip -i N         print entry N (1 = newest) — e.g.  clip -i 2 | jq .
+#   clip add          append stdin (e.g.  kubectl get secret … | clip add)
+#   clip watch        record the clipboard yourself (plain Ubuntu / no AutoHotkey)
+#   clip --path       where the history lives      clip --clear   delete it
+#
+# On WSL the history is written by the Windows AutoHotkey script (Caps+Q there),
+# which sees every copy — Windows apps and WSL alike, because they share one
+# clipboard. On plain Ubuntu, `clip watch` (wl-paste / xclip) records instead.
+# ==============================================================================
+set -uo pipefail
+
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/clip-path"
+hist_path() {
+  if [[ -n ${CLIPHIST_FILE-} ]]; then echo "$CLIPHIST_FILE"; return; fi
+  if [[ -s $cache ]]; then cat "$cache"; return; fi
+  local p
+  if [[ -n ${WSL_DISTRO_NAME-} ]]; then
+    local win
+    win="$(cd /mnt/c 2>/dev/null && /mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')"
+    p="$(wslpath -u "$win")/.cliphist/history.jsonl"
+  else
+    p="${XDG_DATA_HOME:-$HOME/.local/share}/cliphist/history.jsonl"
+  fi
+  mkdir -p "$(dirname "$cache")" && echo "$p" >"$cache"
+  echo "$p"
+}
+HIST="$(hist_path)"
+mkdir -p "$(dirname "$HIST")"
+touch "$HIST"
+
+# entries newest first, as compact JSON (skips broken lines)
+entries() { tac "$HIST" | jq -cR 'fromjson? // empty'; }
+
+copy_out() {   # stdin → system clipboard
+  if command -v pbcopy >/dev/null 2>&1 && [[ -n ${WSL_DISTRO_NAME-} ]]; then pbcopy
+  elif [[ -n ${WAYLAND_DISPLAY-} ]] && command -v wl-copy >/dev/null 2>&1; then wl-copy
+  elif command -v xclip >/dev/null 2>&1; then xclip -selection clipboard
+  elif command -v pbcopy >/dev/null 2>&1; then pbcopy
+  else echo "clip: no clipboard tool (pbcopy / wl-copy / xclip)" >&2; return 1; fi
+}
+
+add_entry() {  # $1 = source app, stdin = text
+  local text
+  text="$(cat)"
+  [[ -z $text ]] && return 0
+  local last
+  last="$(tail -n1 "$HIST" 2>/dev/null | jq -r '.text // empty' 2>/dev/null)"
+  [[ $text == "$last" ]] && return 0
+  jq -cn --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg app "$1" --arg text "$text" \
+    '{ts: $ts, app: $app, text: $text}' >>"$HIST"
+}
+
+case "${1-}" in
+  -h | --help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  --path) echo "$HIST"; exit 0 ;;
+  --clear)
+    read -r -p "delete $(wc -l <"$HIST") entries in $HIST? [y/N] " a
+    [[ $a == [yY] ]] && : >"$HIST" && echo cleared
+    exit 0 ;;
+  add) add_entry "${2:-wsl}"; exit 0 ;;
+  -n) entries | head -n "${2:-20}" | jq -r '"\(.ts)  [\(.app)]\n\(.text)\n"'; exit 0 ;;
+  -s)
+    entries | jq -r --arg q "${2:?search text}" \
+      'select((.text | ascii_downcase) | contains($q | ascii_downcase)) | "\(.ts)  [\(.app)]\n\(.text)\n"'
+    exit 0 ;;
+  -i) entries | sed -n "${2:?entry number}p" | jq -r '.text'; exit 0 ;;
+  watch)
+    if [[ -n ${WSL_DISTRO_NAME-} ]]; then
+      echo "On WSL the Windows AutoHotkey script records every copy already — nothing to do." >&2
+      exit 0
+    elif [[ -n ${WAYLAND_DISPLAY-} ]] && command -v wl-paste >/dev/null 2>&1; then
+      exec wl-paste --type text --watch "$0" add wayland
+    elif command -v xclip >/dev/null 2>&1; then
+      prev=""
+      while sleep 1; do
+        cur="$(xclip -selection clipboard -o 2>/dev/null || true)"
+        if [[ -n $cur && $cur != "$prev" ]]; then
+          printf '%s' "$cur" | add_entry x11
+          prev="$cur"
+        fi
+      done
+    else
+      echo "clip watch needs wl-paste (wl-clipboard) or xclip" >&2
+      exit 1
+    fi ;;
+esac
+
+# ------------------------------------------------------------------ picker ----------
+command -v fzf >/dev/null 2>&1 || { echo "fzf missing — use clip -n 20" >&2; exit 1; }
+[[ -s $HIST ]] || { echo "no clipboard history yet ($HIST)"; exit 0; }
+
+export CLIP_HIST="$HIST"
+out="$(
+  entries | jq -r '[.ts[0:16], .app, (.text | gsub("[\\n\\r\\t]+"; " ⏎ ") | .[0:200])] | @tsv' |
+    nl -ba -w5 -s$'\t' |
+    fzf --ansi --layout=reverse --height=90% --border=rounded --info=inline --no-sort \
+      --delimiter=$'\t' --with-nth=2.. --nth=3.. \
+      --prompt='clipboard ❯ ' \
+      --header='Enter copy+print · Ctrl-o print · Ctrl-y copy · Esc quit' \
+      --preview='tac "$CLIP_HIST" | jq -cR "fromjson? // empty" | sed -n "$(echo {1} | tr -d " ")p" | jq -r ".text"' \
+      --preview-window=right,55%,wrap,border-left \
+      --expect=ctrl-o,ctrl-y
+)" || exit 0
+
+key="$(head -n1 <<<"$out")"
+n="$(sed -n 2p <<<"$out" | cut -f1 | tr -d ' ')"
+[[ -n $n ]] || exit 0
+text="$(entries | sed -n "${n}p" | jq -r '.text')"
+case "$key" in
+  ctrl-o) printf '%s\n' "$text" ;;
+  ctrl-y) printf '%s' "$text" | copy_out ;;
+  *) printf '%s' "$text" | copy_out && printf '%s\n' "$text" ;;
+esac

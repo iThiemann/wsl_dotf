@@ -1,0 +1,15 @@
+# fzf: shell keys + keys inside every fzf picker
+Ctrl-t (shell)	insert file path(s)
+Alt-c (shell)	cd into directory
+**<Tab> (shell)	fzf completion for paths, hosts, pids, env vars
+↑ ↓ / Ctrl-k Ctrl-j / Ctrl-p Ctrl-n	move selection
+Tab / Shift-Tab	mark / unmark (multi-select)
+Enter	accept
+Esc / Ctrl-c	cancel
+Ctrl-u / Ctrl-d	preview half page up / down
+Ctrl-b / Ctrl-f	preview page up / down
+Ctrl-/	toggle preview
+'word	exact match
+^word / word$	prefix / suffix match
+!word	exclude
+a | b	OR: match a or b

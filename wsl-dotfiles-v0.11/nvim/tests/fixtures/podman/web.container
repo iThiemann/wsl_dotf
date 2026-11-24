@@ -1,0 +1,9 @@
+[Unit]
+Description=Web container
+
+[Container]
+Image=docker.io/library/nginx:1.27
+PublishPort=8080:80
+
+[Install]
+WantedBy=default.target

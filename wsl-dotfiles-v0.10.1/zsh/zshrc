@@ -1,0 +1,254 @@
+# ==============================================================================
+# ~/.zshrc — managed by wsl-dotfiles (edit the repo copy zsh/zshrc; ~/.zshrc is a symlink)
+#
+#   One file, in load order:
+#     1. environment + zsh options     (shared env: ~/.config/shell/env.sh)
+#     2. oh-my-zsh, plugins, tool init (fzf, fzf-git, nvm, zoxide, starship, atuin)
+#     3. functions                     (shared:     ~/.config/shell/functions.sh)
+#     4. aliases                       (shared:     ~/.config/shell/aliases.sh)
+#     5. key bindings
+#     6. ~/.zshrc.local (optional, machine-specific) + zsh-syntax-highlighting (last)
+#
+#   The ~/.config/shell/*.sh files are shared with bash, so env/aliases/functions
+#   stay identical in both shells — zsh-only settings live here.
+# ==============================================================================
+
+[[ -o interactive ]] || return
+
+# ==============================================================================
+# 1. environment + zsh options
+# ==============================================================================
+
+[[ -r ~/.config/shell/env.sh ]] && source ~/.config/shell/env.sh
+
+# --- history (atuin is the main search; zsh keeps its own as a fallback) ----------
+HISTFILE=~/.zsh_history
+HISTSIZE=100000
+SAVEHIST=100000
+setopt EXTENDED_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_REDUCE_BLANKS
+setopt HIST_VERIFY SHARE_HISTORY
+
+# --- behaviour ---------------------------------------------------------------------
+setopt AUTO_CD AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_SILENT
+setopt INTERACTIVE_COMMENTS
+setopt NO_BEEP
+
+# ==============================================================================
+# 2. oh-my-zsh, plugins, tool init
+#   order: oh-my-zsh (incl. starship plugin) → fzf → fzf-git → nvm → zoxide → atuin
+# ==============================================================================
+
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH/custom}"
+
+ZSH_THEME=""                      # starship draws the prompt
+zstyle ':omz:update' mode reminder
+zstyle ':omz:update' frequency 5      # = UPDATE_ZSH_DAYS=5 (that variable is deprecated)
+HIST_STAMPS="yyyy-mm-dd"
+COMPLETION_WAITING_DOTS="true"
+DISABLE_UNTRACKED_FILES_DIRTY="true"   # faster git status in big repos
+
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#565f89'
+
+plugins=(
+  # Version Control
+  git
+
+  # Cloud & Infrastructure
+  docker
+  docker-compose
+  kubectl
+  oc                # OpenShift CLI: completion + aliases
+  helm
+  zsh-helmfile      # community: helmfile completion + aliases
+  terraform
+  aws
+  gcloud
+  azure
+  ansible
+  jfrog             # JFrog CLI (jf) completion
+
+  # Programming Languages & Tools
+  python
+  pip
+  node
+  npm
+  yarn
+  golang
+  rust
+  drush             # Drupal shell
+
+  # Productivity Boosters
+  sudo              # Esc Esc → prefix previous/current command with sudo
+  extract           # x <archive> — universal extractor (.tar, .zip, .gz, .7z, …)
+  z                 # jump to frecent dirs (zoxide already powers cd/cdi — z is the classic variant)
+  history           # h / hs / hsi history helpers (note: overrides helm's `h`, use `helm` or hin/hup/…)
+  command-not-found # suggests the apt package for unknown commands
+  vscode            # vsc / vsca / vscd … (uses `code` from Windows)
+  ssh               # host completion from ~/.ssh/config + ssh helpers
+  starship          # prompt (replaces a manual `starship init zsh`)
+  tldr              # Esc-tldr: show tldr page for the command being typed
+  web-search        # google / ddg / github … from the shell
+  rbw               # Bitwarden CLI (rbw) completion + rbwpw (overridden in functions.sh: no clipboard history)
+
+  # Community Plugins (must be last)
+  fzf-tab           # fzf as the Tab menu — after compinit, before autosuggestions
+  zsh-autosuggestions
+  # zsh-syntax-highlighting → sourced at the very end of ~/.zshrc (must load after
+  #                           every widget, incl. atuin/fzf, which come after oh-my-zsh)
+)
+
+# only load plugins that are actually installed (no errors on a half-done setup)
+() {
+  local p keep=()
+  for p in $plugins; do
+    [[ -d $ZSH/plugins/$p || -d $ZSH_CUSTOM/plugins/$p ]] && keep+=($p)
+  done
+  plugins=($keep)
+}
+
+[[ -r $ZSH/oh-my-zsh.sh ]] && source "$ZSH/oh-my-zsh.sh"
+
+# --- completions the plugins normally provide (fallback if a plugin is removed) ------------
+# helm docs: `source <(helm completion zsh)` — the oh-my-zsh helm plugin caches exactly that
+if command -v helm >/dev/null && (( ! $+functions[_helm] )); then
+  source <(helm completion zsh)
+fi
+if command -v rbw >/dev/null && (( ! $+functions[_rbw] )); then
+  source <(rbw gen-completions zsh 2>/dev/null) 2>/dev/null
+fi
+
+# --- fzf: Ctrl-T (files), Alt-C (cd), ** <Tab> -------------------------------------
+command -v fzf >/dev/null && source <(fzf --zsh)
+
+# --- fzf-git.sh: Ctrl-G Ctrl-F/B/T/R/H/S/L/E/W ---------------------------------------
+[[ -r $HOME/fzf-git.sh/fzf-git.sh ]] && source "$HOME/fzf-git.sh/fzf-git.sh"
+
+# --- nvm ------------------------------------------------------------------------------
+if [[ -n ${NVM_DIR-} && -s $NVM_DIR/nvm.sh ]]; then
+  source "$NVM_DIR/nvm.sh"
+  [[ -s $NVM_DIR/bash_completion ]] && source "$NVM_DIR/bash_completion"
+fi
+
+# --- zoxide: replaces cd (cd foo → best match, cdi → picker) ---------------------------
+command -v zoxide >/dev/null && eval "$(zoxide init zsh --cmd cd)"
+
+# --- starship (fallback if the oh-my-zsh starship plugin isn't loaded) ---------------
+if (( ! ${plugins[(Ie)starship]} )) && command -v starship >/dev/null; then
+  eval "$(starship init zsh)"
+fi
+
+# --- atuin: Ctrl-R (Up arrow stays prefix search, see "key bindings" below) ------------------
+command -v atuin >/dev/null && eval "$(atuin init zsh --disable-up-arrow)"
+
+# --- completion look & fzf-tab ----------------------------------------------------------
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*'
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*:descriptions' format '[%d]'
+zstyle ':completion:*:git-checkout:*' sort false
+if (( $+functions[enable-fzf-tab] )); then
+  zstyle ':completion:*' menu no
+  zstyle ':fzf-tab:*' use-fzf-default-opts yes
+  zstyle ':fzf-tab:*' switch-group '<' '>'
+  zstyle ':fzf-tab:complete:(cd|__zoxide_z|__zoxide_zi):*' fzf-preview \
+    'eza -1 --color=always --icons=always $realpath'
+  zstyle ':fzf-tab:complete:(nvim|vim|v|bat|cat|less):*' fzf-preview \
+    '[[ -d $realpath ]] && eza -1 --color=always --icons=always $realpath || bat -n --color=always --line-range :200 $realpath'
+  zstyle ':fzf-tab:complete:(-parameter-|-brace-parameter-|export|unset|expand):*' fzf-preview 'echo ${(P)word}'
+fi
+
+# ==============================================================================
+# 3. functions
+#   loaded after oh-my-zsh so they override its aliases (glog, gup, …)
+# ==============================================================================
+
+[[ -r ~/.config/shell/functions.sh ]] && source ~/.config/shell/functions.sh
+
+# ==============================================================================
+# 4. aliases
+#   git / helm / terraform / ansible / helmfile aliases come from the oh-my-zsh plugins
+# ==============================================================================
+
+[[ -r ~/.config/shell/aliases.sh ]] && source ~/.config/shell/aliases.sh
+
+alias edit-zsh='nvim ~/.zshrc'
+alias reload-zsh='exec zsh'
+
+# ==============================================================================
+# 5. key bindings (same keys as the bash setup)
+#
+#   Up / Down       prefix history search        Ctrl-R   atuin
+#   Ctrl-T / Alt-C  fzf file / cd                Tab      fzf-tab menu
+#   Ctrl-G f/b/l    file path / switch branch / commit hash
+#   Ctrl-G Ctrl-F/B/T/R/H/S/L   fzf-git.sh
+#   F1 / Ctrl-g ?   overview of all shortcuts, aliases, functions (keys)
+#   → / End         accept suggestion            Ctrl-Space accept suggestion
+# ==============================================================================
+
+# ==============================================================================
+
+bindkey '^[[A' history-search-backward
+bindkey '^[OA' history-search-backward
+bindkey '^[[B' history-search-forward
+bindkey '^[OB' history-search-forward
+
+bindkey '^ ' autosuggest-accept
+
+# Ctrl-g f  -> file picker (inserts path)
+fzf-g-file-widget() {
+  local out
+  out="$(gcof)" || { zle redisplay; return; }
+  LBUFFER+="$out"
+  zle redisplay
+}
+zle -N fzf-g-file-widget
+bindkey '^gf' fzf-g-file-widget
+
+# Ctrl-g b -> branch switch
+fzf-g-branch-widget() {
+  gcob
+  zle reset-prompt
+}
+zle -N fzf-g-branch-widget
+bindkey '^gb' fzf-g-branch-widget
+
+# Ctrl-g l -> commit picker (inserts hash)
+fzf-g-commit-widget() {
+  local h
+  h="$(glog)" || { zle redisplay; return; }
+  LBUFFER+="$h"
+  zle redisplay
+}
+zle -N fzf-g-commit-widget
+bindkey '^gl' fzf-g-commit-widget
+
+# F1 / Ctrl-g ? -> keys overview (Enter on an alias/function inserts it)
+keys-widget() {
+  local out
+  out="$(keys --select </dev/tty)"
+  [[ -n $out ]] && LBUFFER+="$out"
+  zle reset-prompt
+}
+zle -N keys-widget
+bindkey '^[OP' keys-widget
+bindkey '^[[11~' keys-widget
+bindkey '^g?' keys-widget
+
+# atuin owns Ctrl-R in every keymap (fzf --zsh binds it too)
+if (( $+widgets[atuin-search] )); then
+  bindkey -M emacs '^R' atuin-search
+  bindkey -M viins '^R' atuin-search
+fi
+
+# ==============================================================================
+# 6. local overrides + syntax highlighting
+# ==============================================================================
+
+[[ -r ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# zsh-syntax-highlighting must be sourced LAST, after every widget exists
+_zsh_hl="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[[ -r $_zsh_hl ]] && source "$_zsh_hl"
+unset _zsh_hl

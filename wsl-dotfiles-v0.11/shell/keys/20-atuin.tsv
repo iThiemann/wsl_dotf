@@ -1,0 +1,18 @@
+# atuin: search UI (open with Ctrl-r)
+Ctrl-r (shell)	open atuin search
+Enter	run selected command now
+Tab	put selected command on the prompt to edit
+Ctrl-r	cycle filter: global → host → session → directory → workspace
+Ctrl-s	cycle search mode: fuzzy → prefix → fulltext
+Alt-1 … Alt-9	pick entry by its number
+↑ ↓ / Ctrl-p Ctrl-n / Ctrl-k Ctrl-j	move selection
+PgUp / PgDn	page through results
+Ctrl-o	open inspector (stats for the command)
+Ctrl-d (inspector)	delete entry from history
+Ctrl-y	copy selected command to clipboard
+Ctrl-u	clear search input
+Ctrl-← / Alt-b , Ctrl-→ / Alt-f	move cursor by word
+Esc / Ctrl-c / Ctrl-g	close, keep original line
+atuin stats	most used commands
+atuin search --exit 0 --after '1 week ago' kubectl	CLI search with filters
+atuin sync / atuin login	sync history with your Mac

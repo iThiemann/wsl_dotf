@@ -1,0 +1,17 @@
+# ~/.config/git/identities/work — loaded by includeIf rules in ~/.gitconfig.local
+[user]
+	name = Max Mustermann
+	email = max.mustermann@company.com
+	signingKey = ~/.ssh/id_ed25519_work.pub
+
+# commit signing with the work SSH key (GitLab/GitHub verify it)
+[gpg]
+	format = ssh
+[commit]
+	gpgSign = true
+
+# SSH with the work key for repos in this identity.
+# `git clone` has no repo yet, so for the first clone use the host alias from ~/.ssh/config
+# (git clone git@gitlab-work:group/project.git) or:  git clone -c core.sshCommand="…" …
+[core]
+	sshCommand = ssh -i ~/.ssh/id_ed25519_work -o IdentitiesOnly=yes

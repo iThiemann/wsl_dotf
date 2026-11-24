@@ -1,0 +1,36 @@
+{
+  "strict script": {
+    "prefix": "bash-strict",
+    "description": "bash script with strict mode + usage",
+    "body": [
+      "#!/usr/bin/env bash",
+      "set -Eeuo pipefail",
+      "IFS=\\$'\\n\\t'",
+      "",
+      "usage() { echo \"usage: \\${0##*/} ${1:args}\" >&2; exit 1; }",
+      "[[ \\$# -ge ${2:1} ]] || usage",
+      "",
+      "$0"
+    ]
+  },
+  "trap cleanup": {
+    "prefix": "trapcleanup",
+    "description": "tmpdir + cleanup trap",
+    "body": [
+      "tmp=\"\\$(mktemp -d)\"",
+      "cleanup() { rm -rf \"\\$tmp\"; }",
+      "trap cleanup EXIT",
+      "$0"
+    ]
+  },
+  "log helpers": {
+    "prefix": "loghelpers",
+    "description": "log / warn / die",
+    "body": [
+      "log()  { printf '\\e[34m==>\\e[0m %s\\n' \"\\$*\"; }",
+      "warn() { printf '\\e[33m!!\\e[0m %s\\n' \"\\$*\" >&2; }",
+      "die()  { printf '\\e[31mxx\\e[0m %s\\n' \"\\$*\" >&2; exit 1; }",
+      "$0"
+    ]
+  }
+}

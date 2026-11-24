@@ -1,0 +1,40 @@
+{
+  "variable": {
+    "prefix": "tfvar",
+    "description": "Terraform variable",
+    "body": [
+      "variable \"${1:name}\" {",
+      "  description = \"${2}\"",
+      "  type        = ${3:string}",
+      "${4:  default     = ${5:null}}",
+      "}",
+      "$0"
+    ]
+  },
+  "output": {
+    "prefix": "tfout",
+    "description": "Terraform output",
+    "body": [
+      "output \"${1:name}\" {",
+      "  description = \"${2}\"",
+      "  value       = ${3}",
+      "}",
+      "$0"
+    ]
+  },
+  "backend s3": {
+    "prefix": "tfbackend",
+    "description": "S3 backend",
+    "body": [
+      "terraform {",
+      "  backend \"s3\" {",
+      "    bucket       = \"${1:tf-state}\"",
+      "    key          = \"${2:env/app}/terraform.tfstate\"",
+      "    region       = \"${3:eu-central-1}\"",
+      "    use_lockfile = true",
+      "  }",
+      "}",
+      "$0"
+    ]
+  }
+}

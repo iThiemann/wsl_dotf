@@ -1,0 +1,99 @@
+{
+  "Deployment": {
+    "prefix": "k8s-deploy",
+    "description": "Kubernetes Deployment",
+    "body": [
+      "apiVersion: apps/v1",
+      "kind: Deployment",
+      "metadata:",
+      "  name: ${1:app}",
+      "  labels:",
+      "    app.kubernetes.io/name: ${1}",
+      "spec:",
+      "  replicas: ${2:2}",
+      "  selector:",
+      "    matchLabels:",
+      "      app.kubernetes.io/name: ${1}",
+      "  template:",
+      "    metadata:",
+      "      labels:",
+      "        app.kubernetes.io/name: ${1}",
+      "    spec:",
+      "      containers:",
+      "        - name: ${1}",
+      "          image: ${3:registry/image}:${4:tag}",
+      "          ports:",
+      "            - containerPort: ${5:8080}",
+      "          resources:",
+      "            requests: { cpu: ${6:100m}, memory: ${7:128Mi} }",
+      "            limits: { memory: ${7} }",
+      "          readinessProbe:",
+      "            httpGet: { path: ${8:/healthz}, port: ${5} }",
+      "$0"
+    ]
+  },
+  "Service": {
+    "prefix": "k8s-svc",
+    "description": "Kubernetes Service (ClusterIP)",
+    "body": [
+      "apiVersion: v1",
+      "kind: Service",
+      "metadata:",
+      "  name: ${1:app}",
+      "spec:",
+      "  selector:",
+      "    app.kubernetes.io/name: ${1}",
+      "  ports:",
+      "    - port: ${2:80}",
+      "      targetPort: ${3:8080}",
+      "$0"
+    ]
+  },
+  "ConfigMap": {
+    "prefix": "k8s-cm",
+    "description": "Kubernetes ConfigMap",
+    "body": [
+      "apiVersion: v1",
+      "kind: ConfigMap",
+      "metadata:",
+      "  name: ${1:app-config}",
+      "data:",
+      "  ${2:KEY}: ${3:value}",
+      "$0"
+    ]
+  },
+  "Ingress": {
+    "prefix": "k8s-ing",
+    "description": "Kubernetes Ingress",
+    "body": [
+      "apiVersion: networking.k8s.io/v1",
+      "kind: Ingress",
+      "metadata:",
+      "  name: ${1:app}",
+      "spec:",
+      "  ingressClassName: ${2:nginx}",
+      "  rules:",
+      "    - host: ${3:app.example.com}",
+      "      http:",
+      "        paths:",
+      "          - path: /",
+      "            pathType: Prefix",
+      "            backend:",
+      "              service: { name: ${1}, port: { number: ${4:80} } }",
+      "$0"
+    ]
+  },
+  "helmfile release": {
+    "prefix": "hf-release",
+    "description": "helmfile release entry",
+    "body": [
+      "- name: ${1:app}",
+      "  namespace: ${2:default}",
+      "  chart: ${3:repo/chart}",
+      "  version: ${4:1.0.0}",
+      "  values:",
+      "    - values/${1}.yaml",
+      "$0"
+    ]
+  }
+}

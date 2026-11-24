@@ -1,0 +1,18 @@
+{
+  "multi-stage": {
+    "prefix": "dmulti",
+    "description": "multi-stage build, non-root",
+    "body": [
+      "FROM ${1:golang:1.23} AS build",
+      "WORKDIR /src",
+      "COPY . .",
+      "RUN ${2:go build -o /out/app ./...}",
+      "",
+      "FROM ${3:gcr.io/distroless/static-debian12:nonroot}",
+      "COPY --from=build /out/app /app",
+      "USER nonroot:nonroot",
+      "ENTRYPOINT [\"/app\"]",
+      "$0"
+    ]
+  }
+}

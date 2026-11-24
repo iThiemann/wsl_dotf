@@ -1,0 +1,16 @@
+# lazygit: essentials (press ? inside for everything; lg or <leader>gg)
+Space	stage / unstage file or hunk
+a	stage all
+c	commit
+A	amend last commit
+P / p	push / pull
+Enter	open file / hunk view
+e / o	edit / open file
+d	discard changes
+s	stash
+b	branch menu (in branches panel: n new, Space checkout, M merge, r rebase)
+i	interactive rebase (commits panel); s squash, f fixup, d drop
+z / Ctrl-z	undo / redo
+[ / ]	previous / next tab
+/	filter
+?	help · q quit

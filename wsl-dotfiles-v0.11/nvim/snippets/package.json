@@ -1,0 +1,50 @@
+{
+  "name": "devops-snippets",
+  "contributes": {
+    "snippets": [
+      {
+        "language": [
+          "yaml",
+          "helm"
+        ],
+        "path": "./kubernetes.json"
+      },
+      {
+        "language": [
+          "sh",
+          "bash",
+          "zsh"
+        ],
+        "path": "./shell.json"
+      },
+      {
+        "language": [
+          "terraform",
+          "hcl",
+          "opentofu"
+        ],
+        "path": "./terraform.json"
+      },
+      {
+        "language": [
+          "dockerfile"
+        ],
+        "path": "./dockerfile.json"
+      },
+      {
+        "language": [
+          "yaml.ansible",
+          "ansible"
+        ],
+        "path": "./ansible.json"
+      },
+      {
+        "language": [
+          "yaml.gitlab",
+          "yaml"
+        ],
+        "path": "./gitlab-ci.json"
+      }
+    ]
+  }
+}
